@@ -261,7 +261,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 <script>
 
 const SCREENS = [
-  { key: 'home', name: 'ホーム', h: 5882, note: 'カードをタップすると、ゆっくり持ち上がって大きく表示されます。利用者数や収支のカードでは事業所ごとの数字、ToDo のカードでは総務全体の進み具合も見られます。「Googleドライブ（総務部）」では、フォルダを押すと中のファイルが見られます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
+  { key: 'home', name: 'ホーム', h: 5882, note: '' },
   { key: 'notices', name: 'お知らせ', h: 1936, note: '法人内のお知らせの一覧です。必読のものは、誰が読んだかを総務で確認できます。' },
   { key: 'notice', name: 'お知らせ（詳細）', h: 2458, note: 'お知らせを開いたところです。読んだら「確認しました」を押します。' },
   { key: 'feed', name: '掲示板', h: 8104, note: '職員どうしの連絡や「ありがとう」を気軽に書き込める場所です。' },
@@ -287,6 +287,7 @@ function show(i, scroll) {
   $('screen-title').textContent = s.name;
   $('screen-count').textContent = (cur + 1) + ' / ' + SCREENS.length;
   $('screen-note').textContent = s.note;
+  $('screen-note').hidden = !s.note;
   $('board-btn').hidden = !(s.key === 'home' || s.key === 'kpi');
   placeSpots(s);
   $('prev').disabled = cur === 0;
