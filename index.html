@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>つどいの家 総務ポータル お試し版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* 1画面ずつ見せるスマホ向けの見本帳：上に画面名、中央に画面の写し、下に切り替えのタブ。ポータル本体と同じ「ひだまり」配色で、明るい1種類だけ */
+:root {
+  --bg: #FFF8EC;
+  --surface: #FFFFFF;
+  --ink: #2B2414;
+  --ink-sub: #6E5A3A;
+  --line: #F2DDB8;
+  --accent: #FFB703;
+  --on-accent: #3A2600;
+  --accent-ink: #9A5B00;
+  --tint: #FFF0D6;
+  --font: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  --bar-h: 64px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-text-size-adjust: 100%; }
+button { font: inherit; color: inherit; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.mark { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center;
+  background: linear-gradient(135deg, #FF8A3D, #FFB703); color: #fff; font-weight: 700; font-size: 15px; }
+.top-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.top-org { font-size: 11px; color: var(--ink-sub); }
+.top-title { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill { margin-left: auto; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--accent-ink);
+  background: var(--tint); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+
+main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14px calc(var(--bar-h) + 28px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.intro { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.intro h1 { margin: 0; font-size: 17px; line-height: 1.4; text-wrap: balance; }
+.intro p { margin: 0; font-size: 14px; color: var(--ink-sub); }
+.screen-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.screen-head h2 { margin: 0; font-size: 18px; }
+.screen-head span { font-size: 12px; color: var(--ink-sub); font-variant-numeric: tabular-nums; }
+.screen-note { margin: 0; font-size: 14px; color: var(--ink-sub); }
+.shot { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 6px 20px rgb(120 80 0 / .08); }
+.shot img { display: block; width: 100%; height: auto; }
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pager button { min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-weight: 500; padding: 8px 12px; cursor: pointer; }
+.pager .next { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.pager button:disabled { opacity: .45; cursor: default; }
+
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.tab { height: var(--bar-h); border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--ink-sub); cursor: pointer; }
+.tab svg { width: 22px; height: 22px; }
+.tab[aria-current="true"] { color: var(--accent-ink); font-weight: 700; }
+.tab[aria-current="true"] svg { color: var(--accent-ink); }
+
+.sheet-bg { position: fixed; inset: 0; z-index: 10; background: rgb(43 36 20 / .35); }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; max-height: 80%; overflow-y: auto;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  padding-inline: 16px; padding-block: 16px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.sheet h2 { margin: 0 0 10px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.grid button { min-height: 56px; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 8px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.grid button b { font-size: 14px; }
+.grid button small { font-size: 11px; color: var(--ink-sub); line-height: 1.4; }
+.grid button[aria-current="true"] { border-color: var(--accent); background: var(--tint); }
+.sheet .close { margin-top: 12px; width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) { .shot img { animation: fade .25s ease-out; } @keyframes fade { from { opacity: .4; } } }
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <span class="mark" aria-hidden="true">つ</span>
+  <span class="top-text"><span class="top-org">社会福祉法人 つどいの家</span><span class="top-title">総務ポータル</span></span>
+  <span class="pill">お試し版</span>
+</header>
+
+<main>
+  <section class="intro" id="intro">
+    <h1>総務の仕事をひとつの画面にまとめたポータルです</h1>
+    <p>お知らせ、申請、研修の受講記録、事務の締切、総務の ToDo などを、職員みんなで使っています。下のボタンで画面を切り替えてご覧ください。</p>
+  </section>
+  <div class="screen-head"><h2 id="screen-title">ホーム</h2><span id="screen-count">1 / 12</span></div>
+  <p class="screen-note" id="screen-note"></p>
+  <div class="shot"><img id="shot" src="img/home.jpg" alt="" width="780" height="5346" decoding="async"></div>
+  <div class="pager">
+    <button type="button" id="prev">← 前の画面</button>
+    <button type="button" class="next" id="next">次の画面 →</button>
+  </div>
+</main>
+
+<nav class="tabs" aria-label="画面の切り替え">
+  <button type="button" class="tab" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>ホーム</button>
+  <button type="button" class="tab" data-go="notices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg>お知らせ</button>
+  <button type="button" class="tab" data-go="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/></svg>ToDo</button>
+  <button type="button" class="tab" data-go="trainings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg>研修</button>
+  <button type="button" class="tab" id="open-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>すべての画面</button>
+</nav>
+
+<div class="sheet-bg" id="sheet-bg" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
+  <h2 id="sheet-title">見たい画面を選んでください</h2>
+  <div class="grid" id="grid"></div>
+  <button type="button" class="close" id="close-sheet">閉じる</button>
+</div>
+
+<script>
+const SCREENS = [
+  { key: 'home', name: 'ホーム', h: 5346, note: '開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
+  { key: 'notices', name: 'お知らせ', h: 1936, note: '法人内のお知らせの一覧です。必読のものは、誰が読んだかを総務で確認できます。' },
+  { key: 'notice', name: 'お知らせ（詳細）', h: 2458, note: 'お知らせを開いたところです。読んだら「確認しました」を押します。' },
+  { key: 'feed', name: '掲示板', h: 8104, note: '職員どうしの連絡や「ありがとう」を気軽に書き込める場所です。' },
+  { key: 'requests', name: '申請', h: 1688, note: '休暇・経費・購入などの申請を出し、承認の進み具合を確認できます。' },
+  { key: 'calendar', name: 'カレンダー', h: 2946, note: '法人の行事と、総務職員の Google カレンダーの予定を重ねて見られます。' },
+  { key: 'members', name: 'メンバー', h: 3200, note: '職員の名鑑です。担当業務と、いま在席しているかがわかります。' },
+  { key: 'messages', name: 'メッセージ', h: 1688, note: '職員どうしで個別やグループでやりとりできます。' },
+  { key: 'trainings', name: '研修', h: 4564, note: '研修の動画をその場で再生し、見終わったら「受講しました」を押します。虐待防止など法定研修の受講状況は、総務が一覧で確認できます。' },
+  { key: 'todos', name: '総務の ToDo', h: 13510, note: '総務全体と一人ひとりの ToDo、進み具合を一目で見られます。締切が近づいた事務は自動で ToDo に入ります。' },
+  { key: 'deadlines', name: '期限', h: 13608, note: '国保連請求や処遇改善加算の報告などの事務の締切と、車検・保険・契約の更新期限をまとめて管理します。' },
+  { key: 'kpi', name: '経営指標', h: 2872, note: '事業所ごとの利用者数と月次の収支を、CSV を取り込んでグラフで見られます。' },
+];
+const $ = (id) => document.getElementById(id);
+let cur = 0;
+
+function show(i, scroll) {
+  cur = (i + SCREENS.length) % SCREENS.length;
+  const s = SCREENS[cur];
+  const img = $('shot');
+  img.src = 'img/' + s.key + '.jpg';
+  img.height = s.h;
+  img.alt = s.name + 'の画面';
+  $('screen-title').textContent = s.name;
+  $('screen-count').textContent = (cur + 1) + ' / ' + SCREENS.length;
+  $('screen-note').textContent = s.note;
+  $('intro').hidden = cur !== 0;
+  $('prev').disabled = cur === 0;
+  $('next').textContent = cur === SCREENS.length - 1 ? '最初の画面へ →' : '次の画面 →';
+  document.querySelectorAll('.tab[data-go]').forEach((t) => t.setAttribute('aria-current', String(t.dataset.go === s.key)));
+  document.querySelectorAll('#grid button').forEach((b, k) => b.setAttribute('aria-current', String(k === cur)));
+  if (location.hash.slice(1) !== s.key) history.replaceState(null, '', '#' + s.key);
+  if (scroll) window.scrollTo({ top: 0 });
+  // 次の画面を先に読んでおく（切り替えを速くする）
+  const next = new Image(); next.src = 'img/' + SCREENS[(cur + 1) % SCREENS.length].key + '.jpg';
+}
+
+function openSheet(open) { $('sheet').hidden = !open; $('sheet-bg').hidden = !open; if (open) $('grid').querySelector('[aria-current="true"]')?.focus(); }
+
+SCREENS.forEach((s, k) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = '<b></b><small></small>';
+  b.querySelector('b').textContent = s.name;
+  b.querySelector('small').textContent = s.note.split('。')[0];
+  b.addEventListener('click', () => { openSheet(false); show(k, true); });
+  $('grid').appendChild(b);
+});
+document.querySelectorAll('.tab[data-go]').forEach((t) => t.addEventListener('click', () => show(SCREENS.findIndex((s) => s.key === t.dataset.go), true)));
+$('open-all').addEventListener('click', () => openSheet(true));
+$('close-sheet').addEventListener('click', () => openSheet(false));
+$('sheet-bg').addEventListener('click', () => openSheet(false));
+$('prev').addEventListener('click', () => show(cur - 1, true));
+$('next').addEventListener('click', () => show(cur + 1, true));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') openSheet(false); });
+const start = SCREENS.findIndex((s) => s.key === location.hash.slice(1));
+show(start < 0 ? 0 : start, false);
+</script>
+
+</body>
+</html>
