@@ -137,6 +137,28 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .note { margin: 0; font-size: 12px; color: var(--ink-sub); }
 .board-close { min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .zoom-bg, .zoom .fade { transition: none; } }
+
+.td-overall { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; background: var(--surface); border-radius: 16px; padding: 14px 16px; }
+.td-ring { --p: 0; width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(closest-side, var(--surface) 72%, transparent 73% 100%), conic-gradient(#FF8A3D calc(var(--p) * 1%), var(--tint) 0); }
+.td-ring span { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.td-counts { margin: 0; display: grid; gap: 6px; }
+.td-counts div { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.td-counts dt { color: var(--ink-sub); }
+.td-counts dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.td-h { margin: 6px 0 0; font-size: 15px; }
+.td-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: 14px; overflow: hidden; }
+.td-list li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.td-list li:first-child { border-top: 0; }
+.td-title { font-size: 14px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.td-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-sub); align-items: center; }
+.td-pill { font-size: 11px; font-weight: 700; border-radius: 99px; padding: 1px 8px; background: var(--tint); color: var(--accent-ink); white-space: nowrap; }
+.td-pill[data-s="overdue"] { background: #FDE2E4; color: #A01A29; }
+.td-pill[data-s="doing"] { background: #E2F0FB; color: #085A80; }
+.td-pill.auto { background: #EEE8FB; color: #5B3BA3; }
+.td-pct { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; align-self: center; }
+.td-list .bar { grid-column: 1 / -1; --c: #FF8A3D; }
+.row .who small { display: block; font-size: 11px; color: var(--ink-sub); font-weight: 400; line-height: 1.3; }
 </style>
 </head>
 <body>
@@ -187,6 +209,23 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
       <div id="groups" class="groups"></div>
       <p class="note">数字は見本です（実際の数字ではありません）。</p>
     </div>
+
+    <div class="zoom-more" id="zoom-todo" hidden>
+      <div class="board-head"><h2>総務全体の進み具合</h2><span id="td-date"></span></div>
+      <div class="td-overall">
+        <div class="td-ring" id="td-ring" role="img"><span id="td-pct"></span></div>
+        <dl class="td-counts">
+          <div><dt>未完了</dt><dd id="td-open"></dd></div>
+          <div><dt>完了</dt><dd id="td-done"></dd></div>
+          <div><dt>期限切れ</dt><dd id="td-over" class="neg"></dd></div>
+        </dl>
+      </div>
+      <h3 class="td-h">総務全体の ToDo</h3>
+      <ul class="td-list" id="td-team"></ul>
+      <h3 class="td-h">担当者ごとの進み具合</h3>
+      <div class="rows" id="td-people"></div>
+      <p class="note">進み具合は、まだ終わっていない ToDo の進捗の平均です。「自動」は、事務の締切や更新期限が近づいたときに自動で入った ToDo です。</p>
+    </div>
     <p class="note zoom-hint" id="zoom-hint">ほかのカードも、タップすると大きく表示されます。</p>
     <button type="button" class="board-close" id="zoom-close">閉じる</button>
   </div>
@@ -201,7 +240,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 <script>
 
 const SCREENS = [
-  { key: 'home', name: 'ホーム', h: 5346, note: 'カードをタップすると、ゆっくり持ち上がって大きく表示されます。利用者数や収支のカードでは、事業所ごとの数字も見られます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
+  { key: 'home', name: 'ホーム', h: 5346, note: 'カードをタップすると、ゆっくり持ち上がって大きく表示されます。利用者数や収支のカードでは事業所ごとの数字、ToDo のカードでは総務全体の進み具合も見られます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
   { key: 'notices', name: 'お知らせ', h: 1936, note: '法人内のお知らせの一覧です。必読のものは、誰が読んだかを総務で確認できます。' },
   { key: 'notice', name: 'お知らせ（詳細）', h: 2458, note: 'お知らせを開いたところです。読んだら「確認しました」を押します。' },
   { key: 'feed', name: '掲示板', h: 8104, note: '職員どうしの連絡や「ありがとう」を気軽に書き込める場所です。' },
@@ -301,7 +340,7 @@ function renderBoard() {
     $('groups').appendChild(g);
   }
 }
-const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, ""], [16, 1584, 358, 464, ""], [16, 990, 358, 360, ""], [16, 2060, 358, 182, ""], [16, 1362, 358, 210, ""], [16, 2258, 358, 113, ""], [16, 2455, 358, 178, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
+const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, "todo"], [16, 1584, 358, 464, ""], [16, 990, 358, 360, ""], [16, 2060, 358, 182, ""], [16, 1362, 358, 210, ""], [16, 2258, 358, 113, ""], [16, 2455, 358, 178, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
 const PAGE_W = 390;
 const EASE = 'cubic-bezier(.3, .7, .25, 1)';
 const SLOW = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
@@ -315,7 +354,7 @@ function placeSpots(s) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'hotspot';
-    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : 'カードを大きく表示');
+    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : r[4] === 'todo' ? 'ToDo のカードを大きく表示して、総務全体の進み具合を見る' : 'カードを大きく表示');
     b.style.left = (r[0] / PAGE_W * 100) + '%';
     b.style.width = (r[2] / PAGE_W * 100) + '%';
     b.style.top = (r[1] / hCss * 100) + '%';
@@ -326,10 +365,12 @@ function placeSpots(s) {
 }
 
 function openZoom(s, r, srcEl) {
-  const kpi = !r || r[4] === 'kpi' || s.key === 'kpi';
-  $('zoom-title').textContent = kpi ? '部門・事業所ごとの数字' : s.name + 'のカード';
+  const isTodo = r && r[4] === 'todo';
+  const kpi = !isTodo && (!r || r[4] === 'kpi' || s.key === 'kpi');
+  $('zoom-title').textContent = kpi ? '部門・事業所ごとの数字' : isTodo ? 'ToDo と総務全体の進み具合' : s.name + 'のカード';
+  $('zoom-todo').hidden = !isTodo;
   $('zoom-more').hidden = !kpi;
-  $('zoom-hint').hidden = kpi;
+  $('zoom-hint').hidden = kpi || isTodo;
   const card = $('zoom-card');
   card.hidden = !r;
   document.body.classList.add('zoom-open');
@@ -403,6 +444,27 @@ $('zoom').addEventListener('click', (e) => { if (e.target === $('zoom')) closeZo
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeZoom(); });
 renderBoard();
 
+
+// ---------- 総務の ToDo（見本の画面の数字） ----------
+const TODO = {"overall": {"progress": 28, "open": 33, "done": 2, "overdue": 4}, "team": {"progress": 10, "open": 10, "done": 0, "overdue": 1}, "people": [{"name": "佐藤 吉久", "title": "総務部長（全体統括）", "progress": 45, "open": 2, "done": 0, "overdue": 0}, {"name": "阿部 麻由子", "title": "介護職員初任者研修担当", "progress": 10, "open": 1, "done": 1, "overdue": 0}, {"name": "金野 祐士", "title": "労務担当", "progress": 55, "open": 2, "done": 0, "overdue": 0}, {"name": "冨田 美沙", "title": "後援会担当", "progress": 0, "open": 1, "done": 1, "overdue": 0}, {"name": "早坂 智毅", "title": "理事会・評議員会担当", "progress": 45, "open": 2, "done": 0, "overdue": 0}, {"name": "髙橋 道代", "title": "総務・ICT担当", "progress": 18, "open": 5, "done": 0, "overdue": 1}, {"name": "半沢 まり子", "title": "労務担当", "progress": 75, "open": 2, "done": 0, "overdue": 1}, {"name": "山口 まなみ", "title": "広報誌・Salesforce・ホームページ担当", "progress": 33, "open": 3, "done": 0, "overdue": 0}, {"name": "安倍 智子", "title": "利用料担当", "progress": 10, "open": 3, "done": 0, "overdue": 0}, {"name": "阿部 幸生", "title": "経理担当", "progress": 10, "open": 4, "done": 0, "overdue": 1}, {"name": "小野 智子", "title": "仙台つどいの家 庶務担当", "progress": 25, "open": 2, "done": 0, "overdue": 0}, {"name": "長谷川 優子", "title": "きょうだい支援・大学説明会担当", "progress": 40, "open": 2, "done": 0, "overdue": 1}], "rows": [{"state": "overdue", "label": "期限切れ", "progress": 0, "auto": true, "title": "更新：消防設備の点検（グループホーム）", "owner": "髙橋 道代", "due": "10月4日(日)"}, {"state": "todo", "label": "未着手", "progress": 0, "auto": true, "title": "国保連への請求（介護給付費等の請求）", "owner": "安倍 智子", "due": "10月10日(土)"}, {"state": "todo", "label": "未着手", "progress": 0, "auto": true, "title": "源泉所得税・住民税（特別徴収）の納付", "owner": "阿部 幸生", "due": "10月10日(土)"}, {"state": "todo", "label": "未着手", "progress": 0, "auto": true, "title": "更新：リース契約（送迎車2号）", "owner": "阿部 幸生", "due": "10月19日(月)"}, {"state": "todo", "label": "未着手", "progress": 0, "auto": false, "title": "運営指導（実地指導）の書類を準備する", "owner": "担当なし", "due": "10月21日(水)"}, {"state": "doing", "label": "進行中", "progress": 10, "auto": false, "title": "法人全体の防災訓練の日程を調整する", "owner": "担当なし", "due": "10月26日(月)"}, {"state": "doing", "label": "進行中", "progress": 30, "auto": false, "title": "冬用タイヤへの交換（送迎車3台）", "owner": "髙橋 道代", "due": "10月28日(水)"}, {"state": "todo", "label": "未着手", "progress": 0, "auto": true, "title": "更新：車検（送迎車1号（ハイエース））", "owner": "髙橋 道代", "due": "10月31日(土)"}, {"state": "doing", "label": "進行中", "progress": 60, "auto": false, "title": "新年度の職員名簿を整える", "owner": "担当なし", "due": "11月6日(金)"}, {"state": "todo", "label": "未着手", "progress": 0, "auto": false, "title": "年末調整の書類を回収する（全職員）", "owner": "担当なし", "due": "11月13日(金)"}]};
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function renderTodo() {
+  const o = TODO.overall;
+  $('td-ring').style.setProperty('--p', o.progress);
+  $('td-ring').setAttribute('aria-label', '総務全体の進み具合 ' + o.progress + '%');
+  $('td-pct').textContent = o.progress + '%';
+  $('td-open').textContent = o.open + '件';
+  $('td-done').textContent = o.done + '件';
+  $('td-over').textContent = o.overdue + '件';
+  $('td-team').innerHTML = TODO.rows.map((r) => `<li><span class="td-title">${esc(r.title)}</span><span class="td-pct">${r.progress}%</span>
+    <span class="bar"><i style="width:${Math.max(r.progress, 2)}%"></i></span>
+    <span class="td-meta"><span class="td-pill" data-s="${esc(r.state)}">${esc(r.label)}</span>${r.auto ? '<span class="td-pill auto">自動</span>' : ''}<span>${esc(r.owner)}</span><span>期限 ${esc(r.due)}</span></span></li>`).join('');
+  $('td-people').style.setProperty('--c', '#2EC4B6');
+  $('td-people').innerHTML = TODO.people.map((m) => `<div class="row"><b class="who">${esc(m.name)}<small>${esc(m.title)}</small></b>
+    <span class="bar"><i style="width:${Math.max(m.progress, 2)}%"></i></span>
+    <span class="val">${m.progress}%<small>残り${m.open}件${m.overdue ? ' ・ <span class="neg">期限切れ' + m.overdue + '</span>' : ''}</small></span></div>`).join('');
+}
+renderTodo();
 const start = SCREENS.findIndex((s) => s.key === location.hash.slice(1));
 show(start < 0 ? 0 : start, false);
 </script>
