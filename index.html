@@ -90,15 +90,26 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .board-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--bar-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 7;
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0;
   background: var(--ink); color: #FFF8EC; font-weight: 700; font-size: 14px; box-shadow: 0 8px 22px rgb(43 36 20 / .25); cursor: pointer; white-space: nowrap; }
-.board-bg { position: fixed; inset: 0; z-index: 20; background: rgb(43 36 20 / .35); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
-.board { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 88%; overflow-y: auto; overscroll-behavior: contain;
-  background: var(--bg); border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px rgb(43 36 20 / .18);
-  transform: translateY(105%); transition: transform .32s cubic-bezier(.16,1,.3,1);
-  padding-inline: 16px; padding-block: 8px calc(20px + env(safe-area-inset-bottom, 0px)); }
-.board-open .board { transform: none; }
-.board-open .board-bg { opacity: 1; pointer-events: auto; }
-.board-inner { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-.grip { width: 44px; height: 5px; border-radius: 99px; background: var(--line); margin: 4px auto 2px; }
+.spots { position: absolute; inset: 0; }
+.hotspot { position: absolute; border: 0; padding: 0; background: transparent; border-radius: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hotspot:active { background: rgb(255 183 3 / .12); }
+.zoom-bg { position: fixed; inset: 0; z-index: 20; background: rgb(43 36 20 / .62); opacity: 0; pointer-events: none; transition: opacity .7s ease; }
+.zoom { position: fixed; inset: 0; z-index: 21; overflow-y: auto; overscroll-behavior: contain; visibility: hidden; pointer-events: none; background: rgb(43 36 20 / 0); transition: background-color .7s ease, visibility 0s linear .7s;
+  padding-inline: 16px; padding-block: calc(12px + env(safe-area-inset-top, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)); }
+.zoom-open .zoom { visibility: visible; pointer-events: auto; background: rgb(43 36 20 / .66); transition: background-color .7s ease; }
+.zoom-closing .zoom { background: rgb(43 36 20 / 0); }
+.zoom-open .zoom-bg { opacity: 1; pointer-events: auto; }
+.zoom-inner { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.zoom-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #fff; }
+.zoom-top h2 { margin: 0; font-size: 16px; font-weight: 700; text-shadow: 0 1px 4px rgb(0 0 0 / .3); }
+.zoom-x { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgb(255 255 255 / .9); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
+.zoom-card { position: relative; overflow: hidden; border-radius: 20px; background: var(--surface); box-shadow: 0 18px 50px rgb(43 36 20 / .35); transform-origin: 0 0; will-change: transform; }
+.zoom-card img { position: absolute; left: 0; top: 0; max-width: none; display: block; }
+.zoom-more { display: flex; flex-direction: column; gap: 14px; background: var(--bg); border-radius: 20px; padding: 16px; }
+.zoom-more[hidden] { display: none; }
+.zoom .fade { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+.zoom .fade.in { opacity: 1; transform: none; }
+.zoom-hint { color: #FFF8EC; text-align: center; }
 .board-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .board-head h2 { margin: 0; font-size: 18px; }
 .board-head span { font-size: 12px; color: var(--ink-sub); }
@@ -125,7 +136,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .neg { color: #A01A29; }
 .note { margin: 0; font-size: 12px; color: var(--ink-sub); }
 .board-close { min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
-@media (prefers-reduced-motion: reduce) { .board, .board-bg { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .zoom-bg, .zoom .fade { transition: none; } }
 </style>
 </head>
 <body>
@@ -144,7 +155,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
   </section>
   <div class="screen-head"><h2 id="screen-title">ホーム</h2><span id="screen-count">1 / 12</span></div>
   <p class="screen-note" id="screen-note"></p>
-  <div class="shot"><button type="button" class="hotspot" id="hotspot" aria-label="事業所ごとの数字を見る" hidden></button><img id="shot" src="img/home.jpg" alt="" width="780" height="5346" decoding="async"></div>
+  <div class="shot"><div class="spots" id="spots"></div><img id="shot" src="img/home.jpg" alt="" width="780" height="5346" decoding="async"></div>
   <div class="pager">
     <button type="button" id="prev">← 前の画面</button>
     <button type="button" class="next" id="next">次の画面 →</button>
@@ -161,19 +172,23 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 
 
 <button type="button" class="board-btn" id="board-btn" hidden>▲ 事業所ごとの数字を見る</button>
-<div class="board-bg" id="board-bg"></div>
-<section class="board" id="board" role="dialog" aria-modal="true" aria-labelledby="board-title" aria-hidden="true">
-  <div class="board-inner">
-    <div class="grip" aria-hidden="true"></div>
-    <div class="board-head"><h2 id="board-title">部門・事業所ごとの数字</h2><span>2026年9月</span></div>
-    <div class="seg" role="group" aria-label="表示する数字">
-      <button type="button" id="seg-usage" aria-pressed="true">利用実績</button>
-      <button type="button" id="seg-money" aria-pressed="false">収支</button>
+<div class="zoom-bg" id="zoom-bg"></div>
+<section class="zoom" id="zoom" role="dialog" aria-modal="true" aria-labelledby="zoom-title" aria-hidden="true">
+  <div class="zoom-inner">
+    <div class="zoom-top"><h2 id="zoom-title">カードを大きく表示</h2><button type="button" class="zoom-x" id="zoom-x" aria-label="閉じる">×</button></div>
+    <div class="zoom-card" id="zoom-card"><img id="zoom-img" alt=""></div>
+    <div class="zoom-more" id="zoom-more">
+      <div class="board-head"><h2 id="board-title">部門・事業所ごとの数字</h2><span>2026年9月</span></div>
+      <div class="seg" role="group" aria-label="表示する数字">
+        <button type="button" id="seg-usage" aria-pressed="true">利用実績</button>
+        <button type="button" id="seg-money" aria-pressed="false">収支</button>
+      </div>
+      <div class="divs" id="divs"></div>
+      <div id="groups" class="groups"></div>
+      <p class="note">数字は見本です（実際の数字ではありません）。</p>
     </div>
-    <div class="divs" id="divs"></div>
-    <div id="groups" class="groups"></div>
-    <p class="note">数字は見本です（実際の数字ではありません）。</p>
-    <button type="button" class="board-close" id="board-close">閉じる</button>
+    <p class="note zoom-hint" id="zoom-hint">ほかのカードも、タップすると大きく表示されます。</p>
+    <button type="button" class="board-close" id="zoom-close">閉じる</button>
   </div>
 </section>
 <div class="sheet-bg" id="sheet-bg" hidden></div>
@@ -185,9 +200,8 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 
 <script>
 
-const HOTSPOT = { home: [14.78, 10.48] };
 const SCREENS = [
-  { key: 'home', name: 'ホーム', h: 5346, note: '利用者数や収支のカードをタップすると、事業所ごとの数字が下から出てきます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
+  { key: 'home', name: 'ホーム', h: 5346, note: 'カードをタップすると、ゆっくり持ち上がって大きく表示されます。利用者数や収支のカードでは、事業所ごとの数字も見られます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
   { key: 'notices', name: 'お知らせ', h: 1936, note: '法人内のお知らせの一覧です。必読のものは、誰が読んだかを総務で確認できます。' },
   { key: 'notice', name: 'お知らせ（詳細）', h: 2458, note: 'お知らせを開いたところです。読んだら「確認しました」を押します。' },
   { key: 'feed', name: '掲示板', h: 8104, note: '職員どうしの連絡や「ありがとう」を気軽に書き込める場所です。' },
@@ -214,10 +228,8 @@ function show(i, scroll) {
   $('screen-count').textContent = (cur + 1) + ' / ' + SCREENS.length;
   $('screen-note').textContent = s.note;
   $('intro').hidden = cur !== 0;
-  const hs = HOTSPOT[s.key];
   $('board-btn').hidden = !(s.key === 'home' || s.key === 'kpi');
-  $('hotspot').hidden = !hs;
-  if (hs) { $('hotspot').style.top = hs[0] + '%'; $('hotspot').style.height = hs[1] + '%'; }
+  placeSpots(s);
   $('prev').disabled = cur === 0;
   $('next').textContent = cur === SCREENS.length - 1 ? '最初の画面へ →' : '次の画面 →';
   document.querySelectorAll('.tab[data-go]').forEach((t) => t.setAttribute('aria-current', String(t.dataset.go === s.key)));
@@ -289,22 +301,106 @@ function renderBoard() {
     $('groups').appendChild(g);
   }
 }
-function openBoard(open) {
-  document.body.classList.toggle('board-open', open);
-  $('board').setAttribute('aria-hidden', String(!open));
-  if (open) { $('board').scrollTop = 0; $('seg-usage').focus({ preventScroll: true }); }
+const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, ""], [16, 1584, 358, 464, ""], [16, 990, 358, 360, ""], [16, 2060, 358, 182, ""], [16, 1362, 358, 210, ""], [16, 2258, 358, 113, ""], [16, 2455, 358, 178, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
+const PAGE_W = 390;
+const EASE = 'cubic-bezier(.3, .7, .25, 1)';
+const SLOW = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
+let zoomFrom = null;
+
+function placeSpots(s) {
+  const box = $('spots');
+  box.innerHTML = '';
+  const hCss = s.h / 2;
+  (RECTS[s.key] || []).forEach((r, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hotspot';
+    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : 'カードを大きく表示');
+    b.style.left = (r[0] / PAGE_W * 100) + '%';
+    b.style.width = (r[2] / PAGE_W * 100) + '%';
+    b.style.top = (r[1] / hCss * 100) + '%';
+    b.style.height = (r[3] / hCss * 100) + '%';
+    b.addEventListener('click', () => openZoom(s, r, b));
+    box.appendChild(b);
+  });
 }
+
+function openZoom(s, r, srcEl) {
+  const kpi = !r || r[4] === 'kpi' || s.key === 'kpi';
+  $('zoom-title').textContent = kpi ? '部門・事業所ごとの数字' : s.name + 'のカード';
+  $('zoom-more').hidden = !kpi;
+  $('zoom-hint').hidden = kpi;
+  const card = $('zoom-card');
+  card.hidden = !r;
+  document.body.classList.add('zoom-open');
+  $('zoom').setAttribute('aria-hidden', 'false');
+  $('zoom').scrollTop = 0;
+  const fades = [...$('zoom').querySelectorAll('.zoom-top, .zoom-more, .zoom-hint, .board-close')];
+  fades.forEach((el) => { el.classList.add('fade'); el.classList.remove('in'); });
+  zoomFrom = null;
+  if (r) {
+    const W = card.parentElement.clientWidth;
+    const k = W / r[2];
+    card.style.height = (r[3] * k) + 'px';
+    const img = $('zoom-img');
+    img.src = $('shot').src;
+    img.style.width = (PAGE_W * k) + 'px';
+    img.style.transform = `translate(${-r[0] * k}px, ${-r[1] * k}px)`;
+    // 元のカードの位置から、ゆっくり上へ持ち上げながら大きくする
+    const S = srcEl.getBoundingClientRect();
+    const D = card.getBoundingClientRect();
+    zoomFrom = srcEl;
+    card.style.transition = 'none';
+    card.style.transform = `translate(${S.left - D.left}px, ${S.top - D.top}px) scale(${S.width / D.width})`;
+    card.style.borderRadius = '16px';
+    card.getBoundingClientRect();
+    card.style.transition = `transform ${SLOW}ms ${EASE}, border-radius ${SLOW}ms ${EASE}`;
+    card.style.transform = 'none';
+    card.style.borderRadius = '20px';
+  }
+  setTimeout(() => fades.forEach((el) => el.classList.add('in')), r ? SLOW * .55 : 0);
+  if (kpi) { mode = 'usage'; renderBoard(); }
+  $('zoom-x').focus({ preventScroll: true });
+}
+
+function closeZoom() {
+  if (!document.body.classList.contains('zoom-open')) return;
+  const card = $('zoom-card');
+  const fades = [...$('zoom').querySelectorAll('.fade')];
+  fades.forEach((el) => el.classList.remove('in'));
+  const done = () => {
+    document.body.classList.remove('zoom-open');
+    $('zoom').setAttribute('aria-hidden', 'true');
+    card.style.transition = 'none';
+    card.style.transform = 'none';
+  };
+  if (zoomFrom && !card.hidden && SLOW) {
+    const S = zoomFrom.getBoundingClientRect();
+    const D = card.getBoundingClientRect();
+    card.style.transition = `transform ${SLOW * .8}ms ${EASE}, border-radius ${SLOW * .8}ms ${EASE}`;
+    card.style.transform = `translate(${S.left - D.left}px, ${S.top - D.top}px) scale(${S.width / D.width})`;
+    card.style.borderRadius = '16px';
+    $('zoom-bg').style.transitionDuration = (SLOW * .8) + 'ms';
+    document.body.classList.add('zoom-closing');
+    setTimeout(() => { document.body.classList.remove('zoom-closing'); $('zoom-bg').style.transitionDuration = ''; done(); }, SLOW * .8);
+    $('zoom-bg').style.opacity = '0';
+    setTimeout(() => { $('zoom-bg').style.opacity = ''; }, SLOW * .8 + 20);
+  } else done();
+}
+
 $('seg-usage').addEventListener('click', () => { mode = 'usage'; renderBoard(); });
 $('seg-money').addEventListener('click', () => { mode = 'money'; renderBoard(); });
-$('board-btn').addEventListener('click', () => openBoard(true));
-$('hotspot').addEventListener('click', () => openBoard(true));
-$('board-bg').addEventListener('click', () => openBoard(false));
-$('board-close').addEventListener('click', () => openBoard(false));
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') openBoard(false); });
-// 下に引っぱると閉じる
-let y0 = null;
-$('board').addEventListener('touchstart', (e) => { y0 = $('board').scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
-$('board').addEventListener('touchend', (e) => { if (y0 !== null && e.changedTouches[0].clientY - y0 > 80) openBoard(false); y0 = null; });
+$('board-btn').addEventListener('click', () => {
+  const s = SCREENS[cur];
+  const r = (RECTS[s.key] || []).find((x) => x[4] === 'kpi');
+  const el = r ? $('spots').children[(RECTS[s.key] || []).indexOf(r)] : null;
+  if (r && el) { el.scrollIntoView({ block: 'center' }); setTimeout(() => openZoom(s, r, el), 350); } else openZoom(s, null, null);
+});
+$('zoom-bg').addEventListener('click', closeZoom);
+$('zoom-x').addEventListener('click', closeZoom);
+$('zoom-close').addEventListener('click', closeZoom);
+$('zoom').addEventListener('click', (e) => { if (e.target === $('zoom')) closeZoom(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeZoom(); });
 renderBoard();
 
 const start = SCREENS.findIndex((s) => s.key === location.hash.slice(1));
