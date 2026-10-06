@@ -25,6 +25,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { background: var(--bg); color: var(--ink); }
 body { margin: 0; font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-text-size-adjust: 100%; }
 button { font: inherit; color: inherit; }
@@ -159,6 +160,23 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .td-pct { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; align-self: center; }
 .td-list .bar { grid-column: 1 / -1; --c: #FF8A3D; }
 .row .who small { display: block; font-size: 11px; color: var(--ink-sub); font-weight: 400; line-height: 1.3; }
+
+.drv-crumb { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 14px; font-weight: 700; }
+.drv-crumb button { border: 0; background: none; padding: 4px 0; color: #085A80; font-weight: 700; cursor: pointer; }
+.drv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.drv-folder { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 14px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--c) 10%, #fff); cursor: pointer; font-size: 12px; line-height: 1.35; text-align: center; min-width: 0; overflow-wrap: anywhere; }
+.drv-folder:active { transform: scale(.97); }
+.drv-folder svg { width: 40px; height: 40px; color: var(--c); }
+.drv-files { background: var(--surface); border-radius: 14px; overflow: hidden; }
+.drv-row { display: grid; grid-template-columns: 32px 1fr; gap: 4px 10px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+.drv-row:first-child { border-top: 0; }
+.drv-ico { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; grid-row: span 2; }
+.drv-name { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.drv-meta { font-size: 12px; color: var(--ink-sub); }
+.drv-open { animation: drvin .45s cubic-bezier(.3,.7,.25,1); }
+@keyframes drvin { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { .drv-open { animation: none; } }
 </style>
 </head>
 <body>
@@ -171,10 +189,6 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 </header>
 
 <main>
-  <section class="intro" id="intro">
-    <h1>総務の仕事をひとつの画面にまとめたポータルです</h1>
-    <p>お知らせ、申請、研修の受講記録、事務の締切、総務の ToDo などを、職員みんなで使っています。下のボタンで画面を切り替えてご覧ください。</p>
-  </section>
   <div class="screen-head"><h2 id="screen-title">ホーム</h2><span id="screen-count">1 / 12</span></div>
   <p class="screen-note" id="screen-note"></p>
   <div class="shot"><div class="spots" id="spots"></div><img id="shot" src="img/home.jpg" alt="" width="780" height="5882" decoding="async"></div>
@@ -226,6 +240,13 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
       <div class="rows" id="td-people"></div>
       <p class="note">進み具合は、まだ終わっていない ToDo の進捗の平均です。「自動」は、事務の締切や更新期限が近づいたときに自動で入った ToDo です。</p>
     </div>
+
+    <div class="zoom-more" id="zoom-drive" hidden>
+      <div class="drv-crumb" id="drv-crumb"></div>
+      <div class="drv-grid" id="drv-grid"></div>
+      <div class="drv-files" id="drv-files" hidden></div>
+      <p class="note">見本のフォルダとファイルです（実際のドライブではありません）。</p>
+    </div>
     <p class="note zoom-hint" id="zoom-hint">ほかのカードも、タップすると大きく表示されます。</p>
     <button type="button" class="board-close" id="zoom-close">閉じる</button>
   </div>
@@ -240,7 +261,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 <script>
 
 const SCREENS = [
-  { key: 'home', name: 'ホーム', h: 5882, note: 'カードをタップすると、ゆっくり持ち上がって大きく表示されます。利用者数や収支のカードでは事業所ごとの数字、ToDo のカードでは総務全体の進み具合も見られます。「Googleドライブ（総務部）」では、よく使うフォルダをすぐに開けます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
+  { key: 'home', name: 'ホーム', h: 5882, note: 'カードをタップすると、ゆっくり持ち上がって大きく表示されます。利用者数や収支のカードでは事業所ごとの数字、ToDo のカードでは総務全体の進み具合も見られます。「Googleドライブ（総務部）」では、フォルダを押すと中のファイルが見られます。開くと最初に出る画面です。必読のお知らせ、自分のやること、利用者数や収支の数字、掲示板の新着が並びます。' },
   { key: 'notices', name: 'お知らせ', h: 1936, note: '法人内のお知らせの一覧です。必読のものは、誰が読んだかを総務で確認できます。' },
   { key: 'notice', name: 'お知らせ（詳細）', h: 2458, note: 'お知らせを開いたところです。読んだら「確認しました」を押します。' },
   { key: 'feed', name: '掲示板', h: 8104, note: '職員どうしの連絡や「ありがとう」を気軽に書き込める場所です。' },
@@ -266,7 +287,6 @@ function show(i, scroll) {
   $('screen-title').textContent = s.name;
   $('screen-count').textContent = (cur + 1) + ' / ' + SCREENS.length;
   $('screen-note').textContent = s.note;
-  $('intro').hidden = cur !== 0;
   $('board-btn').hidden = !(s.key === 'home' || s.key === 'kpi');
   placeSpots(s);
   $('prev').disabled = cur === 0;
@@ -340,7 +360,7 @@ function renderBoard() {
     $('groups').appendChild(g);
   }
 }
-const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, "todo"], [16, 990, 358, 453, ""], [16, 2049, 358, 464, ""], [16, 1455, 358, 360, ""], [16, 2525, 358, 182, ""], [16, 1827, 358, 210, ""], [16, 2723, 358, 113, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
+const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, "todo"], [16, 990, 358, 453, "drive"], [16, 2049, 358, 464, ""], [16, 1455, 358, 360, ""], [16, 2525, 358, 182, ""], [16, 1827, 358, 210, ""], [16, 2723, 358, 113, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
 const PAGE_W = 390;
 const EASE = 'cubic-bezier(.3, .7, .25, 1)';
 const SLOW = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
@@ -354,7 +374,7 @@ function placeSpots(s) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'hotspot';
-    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : r[4] === 'todo' ? 'ToDo のカードを大きく表示して、総務全体の進み具合を見る' : 'カードを大きく表示');
+    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : r[4] === 'todo' ? 'ToDo のカードを大きく表示して、総務全体の進み具合を見る' : r[4] === 'drive' ? 'Googleドライブ（総務部）のフォルダを開く' : 'カードを大きく表示');
     b.style.left = (r[0] / PAGE_W * 100) + '%';
     b.style.width = (r[2] / PAGE_W * 100) + '%';
     b.style.top = (r[1] / hCss * 100) + '%';
@@ -366,11 +386,14 @@ function placeSpots(s) {
 
 function openZoom(s, r, srcEl) {
   const isTodo = r && r[4] === 'todo';
+  const isDrive = r && r[4] === 'drive';
   const kpi = !isTodo && (!r || r[4] === 'kpi' || s.key === 'kpi');
   $('zoom-title').textContent = kpi ? '部門・事業所ごとの数字' : isTodo ? 'ToDo と総務全体の進み具合' : s.name + 'のカード';
   $('zoom-todo').hidden = !isTodo;
+  $('zoom-drive').hidden = !isDrive;
+  if (isDrive) { driveHome(); $('zoom-title').textContent = 'Googleドライブ（総務部）'; }
   $('zoom-more').hidden = !kpi;
-  $('zoom-hint').hidden = kpi || isTodo;
+  $('zoom-hint').hidden = kpi || isTodo || isDrive;
   const card = $('zoom-card');
   card.hidden = !r;
   document.body.classList.add('zoom-open');
@@ -465,6 +488,48 @@ function renderTodo() {
     <span class="val">${m.progress}%<small>残り${m.open}件${m.overdue ? ' ・ <span class="neg">期限切れ' + m.overdue + '</span>' : ''}</small></span></div>`).join('');
 }
 renderTodo();
+
+// ---------- Googleドライブ（総務部）：見本のフォルダとファイル ----------
+const POP = ['#FF8A3D', '#3BA3FF', '#FF5D8F', '#2EC4B6', '#9B5DE5', '#FF9F1C', '#00A6ED', '#4CAF50', '#F15BB5', '#7CB518'];
+const KIND = { doc: ['#4285F4', '文書'], sheet: ['#0F9D58', '表'], pdf: ['#DB4437', 'PDF'], slide: ['#F4B400', 'スライド'], folder: ['#8D6E63', 'フォルダ'] };
+const DRIVE = [
+  ['01_労務', [['folder', '雇用契約書（2026年度）', '金野 祐士', '10月2日'], ['sheet', '有給休暇の取得状況（年5日）', '半沢 まり子', '10月5日'], ['doc', '36協定届（控え）', '金野 祐士', '4月1日'], ['pdf', '就業規則（2026年4月改定）', '佐藤 吉久', '4月1日']]],
+  ['02_経理', [['sheet', '9月 試算表', '阿部 幸生', '10月5日'], ['sheet', '小口現金出納帳（全事業所）', '阿部 幸生', '10月6日'], ['folder', '補助金の実績報告', '阿部 幸生', '9月20日'], ['pdf', '2025年度 計算書類', '佐藤 吉久', '6月25日']]],
+  ['03_利用料', [['sheet', '利用者負担金 請求一覧（10月）', '安倍 智子', '10月3日'], ['sheet', '口座振替の結果（9月分）', '安倍 智子', '9月28日'], ['doc', '未収金の督促状（ひな形）', '安倍 智子', '8月10日']]],
+  ['04_理事会・評議員会', [['doc', '第3回 理事会 招集通知', '早坂 智毅', '10月1日'], ['doc', '定時評議員会 議事録（案）', '早坂 智毅', '10月4日'], ['slide', '理事会資料（上期の事業報告）', '佐藤 吉久', '10月5日'], ['pdf', '定款（最新版）', '早坂 智毅', '6月30日']]],
+  ['05_研修', [['folder', '研修動画（虐待防止・身体拘束）', '阿部 麻由子', '9月15日'], ['sheet', '法定研修 受講記録（2026年度）', '阿部 麻由子', '10月5日'], ['doc', '介護職員初任者研修 募集要項', '阿部 麻由子', '9月30日']]],
+  ['06_広報誌・HP', [['doc', '広報誌「つどい」秋号 原稿', '山口 まなみ', '10月5日'], ['folder', '事業所の写真', '山口 まなみ', '10月2日'], ['sheet', 'Salesforce 寄付者リスト（書き出し）', '山口 まなみ', '9月29日'], ['doc', 'ホームページ 求人情報（更新案）', '山口 まなみ', '10月1日']]],
+  ['07_後援会', [['sheet', '後援会 会員名簿', '冨田 美沙', '9月18日'], ['doc', '後援会報 第42号', '冨田 美沙', '9月25日'], ['doc', '3団体共催講演会 ご案内', '冨田 美沙', '10月5日']]],
+  ['08_様式・規程', [['doc', '休暇届（様式1）', '佐藤 吉久', '4月1日'], ['doc', '住所変更・通勤手当届（様式7）', '金野 祐士', '4月1日'], ['pdf', '経理規程', '佐藤 吉久', '4月1日'], ['pdf', '個人情報保護規程', '佐藤 吉久', '4月1日']]],
+  ['09_小口現金自動化', [['sheet', '小口現金出納帳（自動集計）', '阿部 幸生', '10月6日'], ['doc', '使い方マニュアル', '早坂 智毅', '9月10日'], ['folder', '領収書の写し（10月）', '阿部 幸生', '10月6日']]],
+  ['10_受付文書自動化', [['sheet', '受付簿（自動起票）', '小野 智子', '10月6日'], ['doc', '使い方マニュアル', '早坂 智毅', '9月12日'], ['folder', '受付した文書（PDF）', '小野 智子', '10月6日']]],
+];
+const FOLDER_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4.2l2 2.2h6.8A2.5 2.5 0 0 1 21 8.7v8.8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>';
+function driveHome() {
+  $('drv-crumb').textContent = 'Googleドライブ（総務部）';
+  $('drv-files').hidden = true;
+  $('drv-grid').hidden = false;
+  $('drv-grid').innerHTML = '';
+  DRIVE.forEach(([name], i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'drv-folder'; b.style.setProperty('--c', POP[i % POP.length]);
+    b.innerHTML = FOLDER_SVG + '<span></span>';
+    b.querySelector('span').textContent = name;
+    b.addEventListener('click', () => driveOpen(i));
+    $('drv-grid').appendChild(b);
+  });
+}
+function driveOpen(i) {
+  const [name, files] = DRIVE[i];
+  $('drv-crumb').innerHTML = '<button type="button" id="drv-back">‹ Googleドライブ（総務部）</button><span aria-hidden="true">／</span><span></span>';
+  $('drv-crumb').lastElementChild.textContent = name;
+  $('drv-back').addEventListener('click', driveHome);
+  $('drv-grid').hidden = true;
+  const box = $('drv-files');
+  box.hidden = false;
+  box.innerHTML = files.map(([k, n, who, at]) => `<div class="drv-row"><span class="drv-ico" style="background:${KIND[k][0]}">${k === 'folder' ? FOLDER_SVG.replace('aria-hidden="true"', 'aria-hidden="true" width="18" height="18"') : esc(KIND[k][1].slice(0, 2))}</span><span class="drv-name">${esc(n)}</span><span class="drv-meta">${esc(KIND[k][1])} ・ ${esc(at)} ${esc(who)}</span></div>`).join('');
+  box.classList.remove('drv-open'); void box.offsetWidth; box.classList.add('drv-open');
+}
 const start = SCREENS.findIndex((s) => s.key === location.hash.slice(1));
 show(start < 0 ? 0 : start, false);
 </script>
