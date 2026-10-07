@@ -148,6 +148,17 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .td-counts dt { color: var(--ink-sub); }
 .td-counts dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 .td-h { margin: 6px 0 0; font-size: 15px; }
+.sc-list { display: flex; flex-direction: column; gap: 10px; }
+.sc-person { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.sc-who { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sc-who b { font-size: 15px; }
+.sc-who small { font-size: 11px; color: var(--ink-sub); text-align: right; }
+.sc-ev { display: grid; grid-template-columns: 6.6em 1fr; gap: 8px; align-items: baseline; padding: 6px 10px; border-radius: 10px; background: var(--tint); box-shadow: inset 4px 0 0 var(--c); }
+.sc-ev time { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sc-ev span { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.sc-ev span small { display: block; font-size: 11px; color: var(--ink-sub); }
+.sc-ev.priv span { color: var(--ink-sub); }
+.sc-none { font-size: 13px; color: var(--ink-sub); }
 .td-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: 14px; overflow: hidden; }
 .td-list li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
 .td-list li:first-child { border-top: 0; }
@@ -177,10 +188,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .drv-open { animation: drvin .45s cubic-bezier(.3,.7,.25,1); }
 @keyframes drvin { from { opacity: 0; transform: translateY(14px); } }
 @media (prefers-reduced-motion: reduce) { .drv-open { animation: none; } }
-</style>
-</head>
-<body>
-
+</style></head><body>
 
 <header class="top">
   <span class="mark" aria-hidden="true">つ</span>
@@ -239,6 +247,16 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
       <h3 class="td-h">担当者ごとの進み具合</h3>
       <div class="rows" id="td-people"></div>
       <p class="note">進み具合は、まだ終わっていない ToDo の進捗の平均です。「自動」は、事務の締切や更新期限が近づいたときに自動で入った ToDo です。</p>
+    </div>
+
+    <div class="zoom-more" id="zoom-sched" hidden>
+      <div class="board-head"><h2>総務部 一人ひとりの予定</h2><span id="sc-date"></span></div>
+      <div class="seg" role="group" aria-label="表示する日">
+        <button type="button" id="sc-today" aria-pressed="true">今日</button>
+        <button type="button" id="sc-tomorrow" aria-pressed="false">明日</button>
+      </div>
+      <div class="sc-list" id="sc-list"></div>
+      <p class="note">見本の予定です。実際は、各職員の Google カレンダーから自動で取り込みます。「予定あり」は非公開の予定です。</p>
     </div>
 
     <div class="zoom-more" id="zoom-drive" hidden>
@@ -361,7 +379,7 @@ function renderBoard() {
     $('groups').appendChild(g);
   }
 }
-const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, "todo"], [16, 990, 358, 453, "drive"], [16, 2049, 358, 464, ""], [16, 1455, 358, 360, ""], [16, 2525, 358, 182, ""], [16, 1827, 358, 210, ""], [16, 2723, 358, 113, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
+const RECTS = {"home": [[16, 164, 358, 220, ""], [16, 396, 173, 132, "kpi"], [201, 396, 173, 132, "kpi"], [16, 540, 173, 132, "kpi"], [201, 540, 173, 132, "kpi"], [16, 688, 358, 290, "todo"], [16, 990, 358, 453, "drive"], [16, 2049, 358, 464, ""], [16, 1455, 358, 360, ""], [16, 2525, 358, 182, ""], [16, 1827, 358, 210, "schedule"], [16, 2723, 358, 113, ""]], "notices": [[16, 290, 358, 646, ""]], "notice": [[16, 54, 358, 959, ""], [16, 1029, 358, 76, ""], [16, 1121, 358, 76, ""]], "feed": [[16, 310, 358, 257, ""], [16, 579, 358, 395, ""], [16, 986, 358, 395, ""], [16, 1394, 358, 257, ""], [16, 1663, 358, 177, ""], [16, 1852, 358, 177, ""], [16, 2041, 358, 177, ""], [16, 2230, 358, 371, ""], [16, 2613, 358, 177, ""], [16, 2802, 358, 371, ""], [16, 3185, 358, 371, ""], [16, 3568, 358, 451, ""]], "requests": [[16, 214, 358, 308, ""]], "calendar": [[16, 560, 358, 839, ""]], "members": [[16, 368, 173, 190, ""], [201, 368, 173, 190, ""], [16, 570, 173, 190, ""], [201, 570, 173, 190, ""], [16, 772, 173, 190, ""], [201, 772, 173, 190, ""], [16, 974, 173, 190, ""], [201, 974, 173, 190, ""], [16, 1176, 173, 190, ""], [201, 1176, 173, 190, ""], [16, 1378, 173, 190, ""], [201, 1378, 173, 190, ""]], "messages": [[16, 152, 358, 238, ""]], "trainings": [[16, 1242, 358, 158, ""], [16, 1412, 358, 158, ""], [16, 1582, 358, 158, ""], [16, 1752, 358, 158, ""], [16, 1922, 358, 158, ""], [16, 2092, 358, 158, ""]], "todos": [[16, 172, 358, 130, ""], [16, 326, 358, 116, ""], [16, 454, 358, 114, ""], [16, 580, 358, 114, ""], [16, 706, 358, 114, ""], [16, 832, 358, 114, ""], [16, 958, 358, 114, ""], [16, 1084, 358, 116, ""], [16, 1212, 358, 116, ""], [16, 1340, 358, 114, ""], [16, 1466, 358, 114, ""], [16, 1592, 358, 116, ""], [16, 1720, 358, 114, ""], [16, 1846, 358, 116, ""], [16, 2048, 358, 4597, ""]], "deadlines": [[16, 622, 358, 279, ""], [16, 913, 358, 279, ""], [16, 1204, 358, 350, ""], [16, 1566, 358, 350, ""], [16, 1928, 358, 279, ""], [16, 2219, 358, 439, ""], [16, 2670, 358, 350, ""], [16, 3032, 358, 279, ""], [16, 3323, 358, 350, ""], [16, 3685, 358, 528, ""], [16, 4225, 358, 279, ""], [16, 4516, 358, 279, ""], [16, 4855, 358, 1917, ""]], "kpi": [[16, 342, 358, 348, ""], [16, 714, 358, 814, ""]]};
 const PAGE_W = 390;
 const EASE = 'cubic-bezier(.3, .7, .25, 1)';
 const SLOW = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
@@ -375,7 +393,7 @@ function placeSpots(s) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'hotspot';
-    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : r[4] === 'todo' ? 'ToDo のカードを大きく表示して、総務全体の進み具合を見る' : r[4] === 'drive' ? 'Googleドライブ（総務部）のフォルダを開く' : 'カードを大きく表示');
+    b.setAttribute('aria-label', r[4] === 'kpi' ? '数字のカードを大きく表示して、事業所ごとの数字を見る' : r[4] === 'todo' ? 'ToDo のカードを大きく表示して、総務全体の進み具合を見る' : r[4] === 'drive' ? 'Googleドライブ（総務部）のフォルダを開く' : r[4] === 'schedule' ? '予定のカードを大きく表示して、一人ひとりの予定を見る' : 'カードを大きく表示');
     b.style.left = (r[0] / PAGE_W * 100) + '%';
     b.style.width = (r[2] / PAGE_W * 100) + '%';
     b.style.top = (r[1] / hCss * 100) + '%';
@@ -388,13 +406,16 @@ function placeSpots(s) {
 function openZoom(s, r, srcEl) {
   const isTodo = r && r[4] === 'todo';
   const isDrive = r && r[4] === 'drive';
-  const kpi = !isTodo && (!r || r[4] === 'kpi' || s.key === 'kpi');
+  const isSched = r && r[4] === 'schedule';
+  const kpi = !isTodo && !isSched && (!r || r[4] === 'kpi' || s.key === 'kpi');
   $('zoom-title').textContent = kpi ? '部門・事業所ごとの数字' : isTodo ? 'ToDo と総務全体の進み具合' : s.name + 'のカード';
   $('zoom-todo').hidden = !isTodo;
   $('zoom-drive').hidden = !isDrive;
+  $('zoom-sched').hidden = !isSched;
+  if (isSched) { renderSched(0); $('zoom-title').textContent = '今日と明日の予定'; }
   if (isDrive) { driveHome(); $('zoom-title').textContent = 'Googleドライブ（総務部）'; }
   $('zoom-more').hidden = !kpi;
-  $('zoom-hint').hidden = kpi || isTodo || isDrive;
+  $('zoom-hint').hidden = kpi || isTodo || isDrive || isSched;
   const card = $('zoom-card');
   card.hidden = !r;
   document.body.classList.add('zoom-open');
@@ -533,7 +554,21 @@ function driveOpen(i) {
 }
 const start = SCREENS.findIndex((s) => s.key === location.hash.slice(1));
 show(start < 0 ? 0 : start, false);
-</script>
 
-</body>
-</html>
+// ---------- 今日と明日の予定：一人ひとり（見本） ----------
+const SCHED = [["佐藤 吉久", "総務部長（全体統括）", [["10:00〜11:00", "総務部の定例会", "本部 大会議室", 0], ["15:00〜16:30", "事業所の巡回（八木山）", "", 0]], [["13:00〜14:00", "運営指導の準備の確認", "", 0], ["17:30〜18:30", "理事会", "本部 会議室A", 0]]], ["金野 祐士", "労務担当", [["10:00〜11:00", "総務部の定例会", "本部 大会議室", 0], ["13:30〜15:00", "入職手続き（新任職員2名）", "本部 応接室", 0]], [["09:30〜11:00", "社会保険の手続き", "年金事務所", 0]]], ["半沢 まり子", "労務担当", [["10:00〜11:00", "総務部の定例会", "本部 大会議室", 0], ["14:00〜15:00", "有給休暇の取得状況の確認", "", 0]], [["10:00〜12:00", "健康診断の日程調整（各事業所）", "", 0]]], ["阿部 幸生", "経理担当", [["09:00〜10:00", "外出（銀行）", "", 0], ["14:00〜16:00", "9月の月次締め", "", 0]], [["10:00〜11:30", "小口現金の確認（コペル・仙台）", "", 0]]], ["安倍 智子", "利用料担当", [["11:00〜12:00", "口座振替の結果の確認", "", 0], ["13:00〜16:00", "国保連への請求の準備", "", 0]], [["09:00〜12:00", "国保連への請求の準備", "", 0], ["14:00〜15:00", "ご家族への請求書の発送", "", 0]]], ["髙橋 道代", "総務・ICT担当", [["13:00〜14:00", "消防設備の点検の立ち会い", "グループホーム", 0]], [["09:30〜10:30", "送迎車のタイヤ交換の手配", "", 0], ["15:00〜16:00", "パソコンの設定（新任職員）", "", 0]]], ["早坂 智毅", "理事会・評議員会担当", [["10:00〜11:00", "総務部の定例会", "本部 大会議室", 0], ["13:30〜16:00", "理事会資料の作成", "", 0]], [["15:00〜17:00", "理事会の会場準備", "本部 会議室A", 0], ["17:30〜18:30", "理事会（受付）", "本部 会議室A", 0]]], ["長谷川 優子", "きょうだい支援・大学説明会担当", [["11:00〜12:30", "予定あり", "", 1], ["15:00〜16:00", "大学説明会の打合せ", "", 0]], [["13:00〜15:00", "きょうだい支援の集いの準備", "", 0]]], ["阿部 麻由子", "介護職員初任者研修担当", [["13:30〜15:30", "初任者研修の講師との打合せ", "", 0]], [["10:00〜12:00", "開講式の準備", "本部 研修室", 0]]], ["山口 まなみ", "広報誌・Salesforce・ホームページ担当", [["14:00〜15:00", "広報誌「つどい」秋号の編集", "", 0]], [["10:00〜11:00", "Salesforce の入力の確認", "", 0], ["14:00〜16:00", "事業所の写真撮影", "若福", 0]]], ["冨田 美沙", "後援会担当", [["09:00〜10:00", "外出（郵便局）", "", 0], ["13:00〜14:00", "後援会報の発送準備", "", 0]], [["10:30〜11:30", "3団体共催講演会の打合せ", "", 0]]], ["小野 智子", "仙台つどいの家 庶務担当", [["09:30〜10:30", "文書の受付・仕分け", "仙台", 0], ["16:00〜17:30", "予定あり", "", 1]], [["10:00〜11:00", "小口現金の締め", "仙台", 0]]]];
+function renderSched(off) {
+  const d = new Date(); d.setDate(d.getDate() + off);
+  $('sc-date').textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日(' + '日月火水木金土'[d.getDay()] + ')';
+  $('sc-today').setAttribute('aria-pressed', String(off === 0));
+  $('sc-tomorrow').setAttribute('aria-pressed', String(off === 1));
+  $('sc-list').innerHTML = SCHED.map((p, i) => {
+    const ev = p[2 + off];
+    return `<div class="sc-person" style="--c:${POP[i % POP.length]}"><div class="sc-who"><b>${esc(p[0])}</b><small>${esc(p[1])}</small></div>` +
+      (ev.length ? ev.map((e) => `<div class="sc-ev${e[3] ? ' priv' : ''}"><time>${esc(e[0])}</time><span>${esc(e[1])}${e[2] ? '<small>' + esc(e[2]) + '</small>' : ''}</span></div>`).join('') : '<p class="sc-none">予定はありません</p>') + '</div>';
+  }).join('');
+}
+$('sc-today').addEventListener('click', () => renderSched(0));
+$('sc-tomorrow').addEventListener('click', () => renderSched(1));
+</script>
+</body></html>
