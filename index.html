@@ -51,6 +51,15 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 .screen-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .screen-head h2 { margin: 0; font-size: 18px; }
 .screen-head span { font-size: 12px; color: var(--ink-sub); font-variant-numeric: tabular-nums; }
+.ext-link { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; text-decoration: none; color: var(--ink);
+  background: linear-gradient(135deg, #FFF4D6, #FFE3CC); border: 1px solid #F5C99A; box-shadow: 0 2px 8px rgb(43 36 20 / .08); }
+.ext-link:active { transform: scale(.98); }
+.ext-ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #FF8A3D; color: #fff; }
+.ext-ico svg { width: 24px; height: 24px; }
+.ext-txt { display: flex; flex-direction: column; min-width: 0; }
+.ext-txt b { font-size: 15px; }
+.ext-txt small { font-size: 12px; color: var(--ink-sub); }
+.ext-go { font-size: 18px; color: #C2551A; font-weight: 700; }
 .screen-note { margin: 0; font-size: 14px; color: var(--ink-sub); }
 .shot { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 6px 20px rgb(120 80 0 / .08); }
 .shot img { display: block; width: 100%; height: auto; }
@@ -226,6 +235,11 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 </header>
 
 <main>
+  <a class="ext-link" href="https://script.google.com/a/macros/tsudoinoie.or.jp/s/AKfycbwnI5r1MYFPUroDR1ma3u1wxZ-5q8TPwesy908j122sRQDIZeOG0F_esBdWFSHeEFB7mg/exec" target="_blank" rel="noopener noreferrer">
+    <span class="ext-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>
+    <span class="ext-txt"><b>電子申請 体験版</b><small>押すと体験版が新しいタブで開きます</small></span>
+    <span class="ext-go" aria-hidden="true">↗</span>
+  </a>
   <div class="screen-head"><h2 id="screen-title">ホーム</h2><span id="screen-count">1 / 12</span></div>
   <p class="screen-note" id="screen-note"></p>
   <div class="shot"><div class="spots" id="spots"></div><img id="shot" src="img/home.jpg" alt="" width="780" height="5882" decoding="async"></div>
