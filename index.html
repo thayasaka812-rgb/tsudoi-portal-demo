@@ -95,6 +95,11 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 @media (prefers-reduced-motion: no-preference) { .shot img { animation: fade .25s ease-out; } @keyframes fade { from { opacity: .4; } } }
 
 .shot { position: relative; }
+.shot .full { position: relative; width: 100%; }
+.shot.cut { aspect-ratio: var(--ar); }
+.shot.cut .full { transform: translateY(var(--off)); }
+#box2 { margin-top: 14px; }
+body.has-float main { padding-bottom: calc(var(--bar-h) + 96px + env(safe-area-inset-bottom, 0px)); }
 .hotspot { position: absolute; left: 3%; right: 3%; border: 0; padding: 0; background: transparent; border-radius: 16px; cursor: pointer; }
 .hotspot:focus-visible { outline: 3px solid var(--accent-ink); }
 .board-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--bar-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 7;
@@ -235,14 +240,15 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 </header>
 
 <main>
-  <a class="ext-link" href="shinsei/">
+  <div class="screen-head"><h2 id="screen-title">ホーム</h2><span id="screen-count">1 / 12</span></div>
+  <p class="screen-note" id="screen-note"></p>
+  <div class="shot" id="box1"><div class="full" id="full1"><div class="spots" id="spots"></div><img id="shot" src="img/home.jpg" alt="" width="780" height="5882" decoding="async"></div></div>
+  <a class="ext-link" id="ext-mid" href="shinsei/">
     <span class="ext-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>
     <span class="ext-txt"><b>電子申請 体験版</b><small>押すと体験版が開きます（入力した内容はどこにも送られません）</small></span>
     <span class="ext-go" aria-hidden="true">↗</span>
   </a>
-  <div class="screen-head"><h2 id="screen-title">ホーム</h2><span id="screen-count">1 / 12</span></div>
-  <p class="screen-note" id="screen-note"></p>
-  <div class="shot"><div class="spots" id="spots"></div><img id="shot" src="img/home.jpg" alt="" width="780" height="5882" decoding="async"></div>
+  <div class="shot" id="box2"><div class="full" id="full2"><div class="spots" id="spots2"></div><img id="shot2" src="img/home.jpg" alt="" width="780" height="5882" decoding="async"></div></div>
   <div class="pager">
     <button type="button" id="prev">← 前の画面</button>
     <button type="button" class="next" id="next">次の画面 →</button>
@@ -341,7 +347,7 @@ main { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 14
 <script>
 
 const SCREENS = [
-  { key: 'home', name: 'ホーム', h: 5882, note: '' },
+  { key: 'home', name: 'ホーム', split: 1449, h: 5882, note: '' },
   { key: 'notices', name: 'お知らせ', h: 3632, note: '法人内のお知らせの一覧です。必読のものは、誰が読んだかを総務で確認できます。' },
   { key: 'notice', name: 'お知らせ（詳細）', h: 2690, note: 'お知らせを開いたところです。読んだら「確認しました」を押します。' },
   { key: 'feed', name: '掲示板', h: 15614, note: '職員どうしの連絡や「ありがとう」を気軽に書き込める場所です。' },
@@ -364,11 +370,23 @@ function show(i, scroll) {
   img.src = 'img/' + s.key + '.jpg';
   img.height = s.h;
   img.alt = s.name + 'の画面';
+  // ホームは途中で区切り、間に「電子申請 体験版」を置く
+  const H = s.h / 2, Y = s.split || 0;
+  $('box1').classList.toggle('cut', !!Y);
+  $('box1').style.setProperty('--ar', Y ? '390 / ' + Y : '');
+  $('box2').hidden = $('ext-mid').hidden = !Y;
+  if (Y) {
+    $('shot2').src = img.src; $('shot2').height = s.h;
+    $('box2').classList.add('cut');
+    $('box2').style.setProperty('--ar', '390 / ' + (H - Y));
+    $('box2').style.setProperty('--off', (-Y / H * 100) + '%');
+  }
   $('screen-title').textContent = s.name;
   $('screen-count').textContent = (cur + 1) + ' / ' + SCREENS.length;
   $('screen-note').textContent = s.note;
   $('screen-note').hidden = !s.note;
   $('board-btn').hidden = !(s.key === 'home' || s.key === 'kpi');
+  document.body.classList.toggle('has-float', !$('board-btn').hidden);
   placeSpots(s);
   $('prev').disabled = cur === 0;
   $('next').textContent = cur === SCREENS.length - 1 ? '最初の画面へ →' : '次の画面 →';
@@ -448,9 +466,8 @@ const SLOW = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
 let zoomFrom = null;
 
 function placeSpots(s) {
-  const box = $('spots');
-  box.innerHTML = '';
-  const hCss = s.h / 2;
+  $('spots').innerHTML = ''; $('spots2').innerHTML = '';
+  const hCss = s.h / 2, Y = s.split || 0;
   (RECTS[s.key] || []).forEach((r, i) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -460,8 +477,9 @@ function placeSpots(s) {
     b.style.width = (r[2] / PAGE_W * 100) + '%';
     b.style.top = (r[1] / hCss * 100) + '%';
     b.style.height = (r[3] / hCss * 100) + '%';
+    b.dataset.i = i;
     b.addEventListener('click', () => openZoom(s, r, b));
-    box.appendChild(b);
+    (Y && r[1] >= Y ? $('spots2') : $('spots')).appendChild(b);
   });
 }
 
@@ -551,7 +569,7 @@ $('seg-money').addEventListener('click', () => { mode = 'money'; renderBoard(); 
 $('board-btn').addEventListener('click', () => {
   const s = SCREENS[cur];
   const r = (RECTS[s.key] || []).find((x) => x[4] === 'kpi');
-  const el = r ? $('spots').children[(RECTS[s.key] || []).indexOf(r)] : null;
+  const el = r ? document.querySelector('.hotspot[data-i="' + (RECTS[s.key] || []).indexOf(r) + '"]') : null;
   if (r && el) { el.scrollIntoView({ block: 'center' }); setTimeout(() => openZoom(s, r, el), 350); } else openZoom(s, null, null);
 });
 $('zoom-bg').addEventListener('click', closeZoom);
