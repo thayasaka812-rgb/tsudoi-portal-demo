@@ -412,7 +412,7 @@
 </style>
 <div class="demo-bar" role="note">
   <div class="wrap">
-    <span class="demo-note"><b>体験版</b>：入力した内容はどこにも送られず、お知らせも届きません。ページを開き直すと最初の状態に戻ります。事業所と決裁者は本物、「山田 太郎」と届出の中身は見本です。通勤距離は Googleマップで実際に測ります（見本の届出の距離は仮の数字）。</span>
+    <span class="demo-note"><b>体験版</b>：入力した内容はどこにも送られず、お知らせも届きません。ページを開き直すと最初の状態に戻ります。事業所と決裁者は本物、「山田 太郎」と届出の中身は見本です。通勤距離は、この体験版では住所から作った仮の数字です（本物のアプリでは Googleマップで実際に測ります）。</span>
     <label for="demo-me">見る人を切り替える
       <select id="demo-me"></select>
     </label>
@@ -6604,7 +6604,7 @@ function demoRefreshCommute(id) {
       routes: [{ '通勤方法': '自動車', '区間_自': '自宅', '区間_至': OFFICE, '所要時間_分': '20', '乗車券等の種類': 'なし' }] }, true);
     // Googleマップで測れないとき（ファイルで開いたとき）は、仮の距離だとわかるようにしておく
     var hit = findRecord_(DEMO_SAMPLE7);
-    hit.rec['通勤距離_経路'] = '体験版の見本のため仮の距離です（新しく届け出ると Googleマップで実際に測ります）';
+    hit.rec['通勤距離_経路'] = '体験版のため仮の距離です（本物のアプリでは Googleマップで実際に測ります）';
     writeRow_(hit.t, hit.rec);
   }); }); });
   DEMO_ENV.setMe('yamada@example.jp');
